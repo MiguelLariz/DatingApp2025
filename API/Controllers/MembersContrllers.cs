@@ -8,9 +8,9 @@ namespace API.Controllers;
 
 // Esto genera https://localhost:5001/api/members le quita el controller
 // porque esta entre corchetes
-[Route("api/[controller]")]
-[ApiController]
-public class MembersController(AppDbContext context) : ControllerBase
+// [Route("api/[controller]")]
+// [ApiController]
+public class MembersController(AppDbContext context) : BaseApiController
 {
 
     // Este es el primero en ejecutarse
