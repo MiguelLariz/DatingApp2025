@@ -1,5 +1,7 @@
 // Crera servicio web
 using API.Data;
+using API.Interfaces;
+using API.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 // Poder consultar si tiene permisos
 builder.Services.AddCors();
+builder.Services.AddSingleton<ITokenService, TokenService>();
 
 
 // Crea el documento de la API, se puede eliminar para aligerar la API
