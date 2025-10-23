@@ -3,21 +3,22 @@ using System.Text;
 using API.Data;
 using API.DTOs;
 using API.Entities;
+using API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace API.Controllers;
 
-public class AccountController(AppDbContext context) : BaseApiController
+
+public class AccountController(AppDbContext context, ITokenService tokenService) : BaseApiController
 {
     [HttpPost("register")]
-    public async Task<ActionResult<AppUser>> Register(RegisterRequest request)
-    {
 
+    public async Task<ActionResult<UserResponse>> Register(RegisterRequest request)
+    {
         if (await EmailExists(request.Email)) return BadRequest("Email is already in use");
 
-        // Encriptar la llave
         using var hmac = new HMACSHA512();
 
         var user = new AppUser
@@ -28,17 +29,21 @@ public class AccountController(AppDbContext context) : BaseApiController
             PasswordSalt = hmac.Key
         };
 
-        // Hace todo para cambiar los datos en la base de datos
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        return user;
-
+        return new UserResponse
+        {
+            Id = user.Id,
+            DisplayName = user.DisplayName,
+            Email = user.Email,
+            Token = tokenService.CreateToken(user)
+        };
     }
-
+    
     [HttpPost("login")]
 
-    public async Task<ActionResult<AppUser>> Login(LoginRequest request)
+    public async Task<ActionResult<UserResponse>> Login(LoginRequest request)
     {
         var user = await context.Users.SingleOrDefaultAsync(u => u.Email == request.Email);
 
@@ -53,12 +58,17 @@ public class AccountController(AppDbContext context) : BaseApiController
             if (computeHash[i] != user.PasswordHash[i]) return Unauthorized("Invalid email or password");
         }
 
-        return user;
+        return new UserResponse
+        {
+            Id = user.Id,
+            DisplayName = user.DisplayName,
+            Email = user.Email,
+            Token = tokenService.CreateToken(user)
+        };
     } 
 
     private async Task<bool> EmailExists(string email)
     {
-        // StringComparison no se puede usar en operaciones lambda
         return await context.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
     }
 }
