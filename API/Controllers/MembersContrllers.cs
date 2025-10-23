@@ -1,5 +1,6 @@
 using API.Data;
 using API.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ namespace API.Controllers;
 // porque esta entre corchetes
 // [Route("api/[controller]")]
 // [ApiController]
+[Authorize]
 public class MembersController(AppDbContext context) : BaseApiController
 {
 
@@ -23,6 +25,7 @@ public class MembersController(AppDbContext context) : BaseApiController
         return members;
     }
 
+    [AllowAnonymous]
     [HttpGet("{id}")] // https://localhost:5001/api/members/bob-id
     public async Task<ActionResult<AppUser>> GetMember(string id)
     {
