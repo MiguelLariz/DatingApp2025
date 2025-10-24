@@ -15,6 +15,7 @@ namespace API.Controllers;
 public class MembersController(AppDbContext context) : BaseApiController
 {
 
+    [AllowAnonymous]
     // Este es el primero en ejecutarse
     [HttpGet]
     // Si se ocupa un IEnumerable es lo mismo que List
