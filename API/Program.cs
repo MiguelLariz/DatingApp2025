@@ -1,26 +1,20 @@
-// Crera servicio web
 using System.Text;
 using API.Data;
 using API.Interfaces;
 using API.Middlewares;
 using API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.CodeAnalysis.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-// Agregar controladores
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(opt =>
 {
     opt.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection"));
 });
 
-// Poder consultar si tiene permisos
 builder.Services.AddCors();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -37,17 +31,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-
-// Crea el documento de la API, se puede eliminar para aligerar la API
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// builder.Services.AddOpenApi();
-
 var app = builder.Build();
-
 // Configure the HTTP request pipeline.
 app.UseMiddleware<ExceptionMiddleware>();
-
-// Aceptar los permisos (seguridad) para poder consultarlo
 app.UseCors(x => x.AllowAnyHeader()
     .AllowAnyMethod()
     .WithOrigins(
@@ -57,8 +43,21 @@ app.UseCors(x => x.AllowAnyHeader()
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-
 app.MapControllers();
+
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+
+try
+{
+    var context = services.GetRequiredService<AppDbContext>();
+    await context.Database.MigrateAsync();
+    await Seed.SeedUsers(context);
+}
+catch (Exception ex)
+{
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Migration process failed!");
+}
 
 app.Run();
