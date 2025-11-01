@@ -14,5 +14,5 @@ public class AppUser
     // Navigation properties
     
     public Member Member { get; set; } = null!;
-
+    public IEnumerable<object> Photos { get; internal set; }
 }
